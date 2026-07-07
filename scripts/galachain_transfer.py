@@ -26,31 +26,23 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import platform
 import subprocess
 import sys
 import urllib.error
 import urllib.request
 
 import galachain_eip712 as gc
+from signer_common import SIGNER_SCRIPT, ensure_paired, signer_python
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SIGNER_SCRIPT = "trezor_signer.py"
 DEFAULT_PATH = "m/44'/60'/0'/0/0"
 DEFAULT_BASE_URL = "https://operation-api-next-production.prod.internal.us-east-va-1.galachain.com"
-
-
-def _signer_python() -> str:
-    """WSL must hop to Windows Python; everywhere else, in-process."""
-    if platform.system() == "Linux" and "microsoft" in platform.uname().release.lower():
-        return "python.exe"
-    return sys.executable
 
 
 def _sign_typed(typed_data: dict, path: str, expected_from: str | None,
                 transport: str) -> dict:
     """Delegate EIP-712 signing to trezor_signer.py."""
-    cmd = [_signer_python(), SIGNER_SCRIPT, "--transport", transport,
+    cmd = [signer_python(), SIGNER_SCRIPT, "--transport", transport,
            "sign-typed", "--path", path]
     if expected_from:
         cmd += ["--expected-from", expected_from]
@@ -133,7 +125,8 @@ def main() -> int:
             f"  digest    : 0x{built['digest']}",
         ]), file=sys.stderr)
 
-    # 2. Sign on the device.
+    # 2. Sign on the device (pairing is required first — force it if needed).
+    ensure_paired(credential=None, transport=args.transport, cwd=HERE)
     res = _sign_typed(built["typedData"], args.path, args.expected_from, args.transport)
     device, signature = res["address"], res["signature"]
 

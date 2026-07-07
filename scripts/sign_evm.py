@@ -22,7 +22,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import platform
 import subprocess
 import sys
 
@@ -31,18 +30,12 @@ from eth_account import Account
 from eth_utils import keccak, to_canonical_address
 from web3 import Web3
 
+from signer_common import SIGNER_SCRIPT, ensure_paired, signer_python
+
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-SIGNER_SCRIPT = "trezor_signer.py"  # resolved relative to PROJECT_DIR
 DEFAULT_PATH = "m/44'/60'/0'/0/0"
 # Fee headroom: maxFee = baseFee * multiplier + priorityFee
 BASE_FEE_MULTIPLIER = 2
-
-
-def _signer_python() -> str:
-    """WSL must hop to Windows Python (Safe 7 not forwarded); everywhere else, in-process."""
-    if platform.system() == "Linux" and "microsoft" in platform.uname().release.lower():
-        return "python.exe"
-    return sys.executable
 
 
 # --------------------------------------------------------------------------- #
@@ -52,7 +45,7 @@ def _call_signer(subcommand: str, *, stdin: str | None = None,
                  extra: list[str] | None = None, credential: str | None = None,
                  transport: str | None = None) -> dict:
     """Invoke trezor_signer.py and return its parsed JSON result."""
-    cmd = [_signer_python(), SIGNER_SCRIPT]
+    cmd = [signer_python(), SIGNER_SCRIPT]
     if credential:
         cmd += ["--credential", credential]
     if transport:
@@ -198,7 +191,10 @@ def main() -> int:
         print(f"ERROR: cannot reach RPC at {args.rpc_url}", file=sys.stderr)
         return 2
 
-    # 1. Sender comes from the device — the only source of truth for 'from'.
+    # 1. Pairing is required before any device use — force it if needed.
+    ensure_paired(credential=args.credential, transport=args.transport, cwd=PROJECT_DIR)
+
+    # 2. Sender comes from the device — the only source of truth for 'from'.
     sender = device_address(args.path, args.credential, args.transport)
 
     # 2. Build the tx from read-only chain state.

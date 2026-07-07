@@ -49,29 +49,29 @@ confirming on the device screen (host app name `bridgekeeper-plugin`).
   orchestrator shells out to Windows-side `python.exe` for the signer (the
   signer still picks BLE or USB on the Windows host).
 
-## Pairing (required before first use)
-The device must be paired once; signing returns `{"error":"not_paired"}` until it
-is. Check anytime with `scripts/trezor_signer.py status`. Run the steps below from
-the skill directory; the code lives under `scripts/`.
+## Pairing
+The device must be paired once before it can sign (THP CodeEntry). **You don't pair
+manually** — `sign_evm.py` and `galachain_transfer.py` detect an unpaired device and
+run the pairing flow automatically before signing: the Trezor shows a code, you type
+it in, and signing continues. So the flow is simply *run the sign command and follow
+the on-device prompt*. Because typing that code needs an interactive terminal, run
+signing from a real terminal on first use (not fully unattended).
+
+Check state anytime with `scripts/trezor_signer.py status`; pair ahead of time with
+`scripts/trezor_signer.py pair`. The credential is saved to your user config
+directory (see above), not the skill folder.
+
+The only real setup is installing dependencies once, from the skill directory
+(`scripts/` holds the code):
 
 ### macOS / native Linux / native Windows
 1. Single venv: `python -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt`
 2. **macOS only** — grant Bluetooth permission to your terminal in
    System Settings → Privacy & Security → Bluetooth.
-3. **Pair the device** (interactive — shows a code on the Trezor to type back):
-   ```
-   .venv/bin/python scripts/trezor_signer.py pair
-   ```
-   The printed address must match the wallet. The credential is saved to your user
-   config directory (see above), not the skill folder.
 
 ### WSL (legacy split)
 1. **Windows Python** with trezorlib: `python.exe -m pip install --user -r scripts/requirements-windows.txt`
 2. **WSL venv**: `python -m venv .venv && .venv/bin/pip install -r scripts/requirements-wsl.txt`
-3. **Pair the device** (from Windows):
-   ```
-   python.exe scripts/trezor_signer.py pair
-   ```
 
 ### Transport selection
 By default the signer tries BLE first then falls back to USB. Force a transport
