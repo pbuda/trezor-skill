@@ -45,8 +45,27 @@ per-sign human step is confirming on the device screen.
   orchestrator shells out to Windows-side `python.exe` for the signer (the
   signer still picks BLE or USB on the Windows host).
 
+## Install
+`install.sh` clones this repo and symlinks it into your global Claude skills
+directory, so Claude discovers it by its manifest name:
+
+```
+./install.sh
+```
+
+Or bootstrap on a machine with nothing cloned yet:
+
+```
+curl -fsSL https://raw.githubusercontent.com/pbuda/trezor-skill/main/install.sh | bash
+```
+
+Override the clone location with `TREZOR_SKILL_SRC` and the skills directory with
+`CLAUDE_SKILLS_DIR`. The script prints the exact one-time setup for your platform
+when it finishes.
+
 ## Prerequisites (one-time)
-Run from the skill root (`skills/sign-with-trezor/`); code lives in `scripts/`.
+Run these from the installed skill directory (the linked location the installer
+reports); the code lives under `scripts/`.
 
 ### macOS / native Linux / native Windows
 1. Single venv: `python -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt`
