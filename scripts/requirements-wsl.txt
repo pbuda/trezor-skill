@@ -1,0 +1,5 @@
+# WSL side (sign_evm.py): RPC, tx assembly, signature recovery. No device I/O.
+web3>=7,<8
+eth-account>=0.13
+rlp>=4
+eth-utils>=5

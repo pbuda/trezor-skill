@@ -1,0 +1,4 @@
+# Windows side (trezor_signer.py): native device I/O for the Safe 7. Used only
+# when the orchestrator runs in WSL and shells out via python.exe interop. The
+# [ble] extra pulls in `bleak` so BLE is preferred and USB is the fallback.
+trezor[ble]>=0.20,<0.21

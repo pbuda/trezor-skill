@@ -1,0 +1,7 @@
+# THP pairing credential — contains host_privkey; sensitive, never commit.
+trezor_credential.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc

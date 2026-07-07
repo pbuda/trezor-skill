@@ -1,0 +1,9 @@
+# Native single-venv setup (macOS, Linux, native Windows). One Python runs both
+# the orchestrators (sign_evm.py, galachain_transfer.py) and the device signer
+# (trezor_signer.py). The [ble] extra pulls in `bleak` so the Safe 7 can be
+# reached over Bluetooth Low Energy — USB is the automatic fallback.
+trezor[ble]>=0.20,<0.21
+web3>=7,<8
+eth-account>=0.13
+rlp>=4
+eth-utils>=5
