@@ -31,6 +31,20 @@ finishes by printing the one-time device setup (venv + pairing) for your platfor
 | `TREZOR_SKILL_SRC` | `~/.local/share/trezor-skill` | Where the clone lives (when bootstrapping). |
 | `CLAUDE_SKILLS_DIR` | `~/.claude/skills` | Global Claude skills directory to link into. |
 
+## Uninstall
+
+```sh
+./uninstall.sh              # remove the skill symlink and the managed clone
+./uninstall.sh --keep-clone # remove only the symlink
+```
+
+It never deletes a checkout it didn't create (e.g. your own working copy) — it
+prints how to remove that yourself. The pairing credential is left in place; the
+script prints its path so you can delete it for a full wipe.
+
+Or by hand: `rm ~/.claude/skills/sign-with-trezor` (the symlink) and, if bootstrapped,
+`rm -rf ~/.local/share/trezor-skill` (the clone).
+
 ## After install
 
 **The device must be paired once before first use** — signing returns
