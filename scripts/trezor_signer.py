@@ -45,10 +45,40 @@ APP_NAME = "bridgekeeper-plugin"
 DEFAULT_PATH = "m/44'/60'/0'/0/0"
 CONNECT_RETRIES = 5
 RETRY_DELAY_S = 0.4
-DEFAULT_CRED = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "trezor_credential.json"
-)
 TRANSPORT_CHOICES = ("auto", "ble", "usb")
+
+CRED_APP_DIR = "trezor-skill"
+CRED_FILENAME = "trezor_credential.json"
+# Legacy location: older versions stored the credential next to this script.
+_LEGACY_CRED = os.path.join(os.path.dirname(os.path.abspath(__file__)), CRED_FILENAME)
+
+
+def _user_config_dir() -> str:
+    """Per-OS user config directory for this tool's state (resolved on the host
+    that actually talks to the device — Windows in the WSL setup)."""
+    if sys.platform == "win32":
+        base = (os.environ.get("APPDATA")
+                or os.environ.get("LOCALAPPDATA")
+                or os.path.join(os.path.expanduser("~"), "AppData", "Roaming"))
+    elif sys.platform == "darwin":
+        base = os.path.join(os.path.expanduser("~"), "Library", "Application Support")
+    else:
+        base = (os.environ.get("XDG_CONFIG_HOME")
+                or os.path.join(os.path.expanduser("~"), ".config"))
+    return os.path.join(base, CRED_APP_DIR)
+
+
+DEFAULT_CRED = os.path.join(_user_config_dir(), CRED_FILENAME)
+
+
+def _resolve_read_path(path: str) -> str:
+    """Where to read the credential from: the requested path if present, else the
+    legacy in-skill location (so pairings from older versions keep working)."""
+    if path and os.path.exists(path):
+        return path
+    if path == DEFAULT_CRED and os.path.exists(_LEGACY_CRED):
+        return _LEGACY_CRED
+    return path
 
 
 def _log(msg: str) -> None:
@@ -75,6 +105,7 @@ def _load_credential(path: str) -> StaticCredential | None:
 
 
 def _save_credential(path: str, cred: StaticCredential) -> None:
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(
             {
@@ -152,9 +183,9 @@ def cmd_pair(args) -> int:
 
 
 def cmd_address(args) -> int:
-    cred = _load_credential(args.credential)
+    cred = _load_credential(_resolve_read_path(args.credential))
     if cred is None:
-        _emit({"error": "not_paired", "message": "Run `pair` first."})
+        _emit({"error": "not_paired", "message": "Device not paired. Run `trezor_signer.py pair` first."})
         return 3
     client = _connect(args.transport, credentials=[cred])
     if not client.pairing.is_paired():
@@ -168,9 +199,9 @@ def cmd_address(args) -> int:
 
 def cmd_sign(args) -> int:
     req = json.load(sys.stdin)
-    cred = _load_credential(args.credential)
+    cred = _load_credential(_resolve_read_path(args.credential))
     if cred is None:
-        _emit({"error": "not_paired", "message": "Run `pair` first."})
+        _emit({"error": "not_paired", "message": "Device not paired. Run `trezor_signer.py pair` first."})
         return 3
 
     def button_callback(br) -> None:
@@ -210,9 +241,9 @@ def cmd_sign(args) -> int:
 def cmd_sign_typed(args) -> int:
     """Sign EIP-712 typed data (JSON on stdin) -> {address, signature(130-hex, v=1b/1c)}."""
     data = json.load(sys.stdin)
-    cred = _load_credential(args.credential)
+    cred = _load_credential(_resolve_read_path(args.credential))
     if cred is None:
-        _emit({"error": "not_paired", "message": "Run `pair` first."})
+        _emit({"error": "not_paired", "message": "Device not paired. Run `trezor_signer.py pair` first."})
         return 3
 
     def button_callback(br) -> None:
@@ -239,6 +270,17 @@ def cmd_sign_typed(args) -> int:
     return 0
 
 
+def cmd_status(args) -> int:
+    """Report whether the device is paired (a stored credential exists). No device I/O."""
+    path = _resolve_read_path(args.credential)
+    paired = bool(path and os.path.exists(path))
+    _emit({
+        "paired": paired,
+        "credential_file": path if paired else args.credential,
+    })
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Trezor Safe 7 signer.")
     parser.add_argument("--credential", default=DEFAULT_CRED,
@@ -246,6 +288,9 @@ def main() -> int:
     parser.add_argument("--transport", choices=TRANSPORT_CHOICES, default="auto",
                         help="Transport preference: auto (BLE then USB), ble, or usb.")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    p_status = sub.add_parser("status", help="Report whether the device is paired.")
+    p_status.set_defaults(func=cmd_status)
 
     p_pair = sub.add_parser("pair", help="Interactive one-time pairing.")
     p_pair.add_argument("--path", default=DEFAULT_PATH)

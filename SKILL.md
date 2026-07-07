@@ -30,12 +30,16 @@ trezor_signer.py  ──►  BLE (bleak / CoreBluetooth on macOS) — preferred
                           Trezor Safe 7
 ```
 
-`trezor_signer.py` subcommands: `pair`, `address`, `sign` (EIP-1559),
+`trezor_signer.py` subcommands: `status`, `pair`, `address`, `sign` (EIP-1559),
 `sign-typed` (EIP-712). The Safe 7 speaks THP with **only CodeEntry pairing**, so
-a one-time pairing produces `trezor_credential.json` (host app name
-`bridgekeeper-plugin`) that every later sign replays non-interactively. The
-credential is transport-agnostic — the same file works for BLE and USB. The only
-per-sign human step is confirming on the device screen.
+the device must be paired once before any signing. Pairing writes a credential to
+your **user config directory** — `%APPDATA%\trezor-skill\` on Windows,
+`~/Library/Application Support/trezor-skill/` on macOS, `~/.config/trezor-skill/`
+on Linux — **not** the skill folder, and every later sign replays it
+non-interactively. The credential is transport-agnostic (same file for BLE and
+USB). `status` reports whether a credential exists; until it does, signing
+commands return `{"error":"not_paired"}`. The only per-sign human step is
+confirming on the device screen (host app name `bridgekeeper-plugin`).
 
 ### Runtime layout
 
@@ -45,8 +49,10 @@ per-sign human step is confirming on the device screen.
   orchestrator shells out to Windows-side `python.exe` for the signer (the
   signer still picks BLE or USB on the Windows host).
 
-## Prerequisites (one-time)
-Run these from the skill directory; the code lives under `scripts/`.
+## Pairing (required before first use)
+The device must be paired once; signing returns `{"error":"not_paired"}` until it
+is. Check anytime with `scripts/trezor_signer.py status`. Run the steps below from
+the skill directory; the code lives under `scripts/`.
 
 ### macOS / native Linux / native Windows
 1. Single venv: `python -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt`
@@ -56,8 +62,8 @@ Run these from the skill directory; the code lives under `scripts/`.
    ```
    .venv/bin/python scripts/trezor_signer.py pair
    ```
-   Creates `trezor_credential.json` (gitignored). The printed address must match
-   the wallet.
+   The printed address must match the wallet. The credential is saved to your user
+   config directory (see above), not the skill folder.
 
 ### WSL (legacy split)
 1. **Windows Python** with trezorlib: `python.exe -m pip install --user -r scripts/requirements-windows.txt`

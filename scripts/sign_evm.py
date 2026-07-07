@@ -175,7 +175,7 @@ def main() -> int:
     p.add_argument("--rpc-url", required=True, help="Read-only RPC endpoint (never broadcast).")
     p.add_argument("--to", required=True, help="Recipient / contract address.")
     p.add_argument("--path", default=DEFAULT_PATH, help="BIP-44 derivation path.")
-    p.add_argument("--credential", default=None, help="THP credential JSON (default: alongside signer).")
+    p.add_argument("--credential", default=None, help="THP credential JSON (default: user config dir).")
     p.add_argument("--transport", choices=("auto", "ble", "usb"), default="auto",
                    help="Transport preference passed to the signer.")
 

@@ -33,6 +33,10 @@ finishes by printing the one-time device setup (venv + pairing) for your platfor
 
 ## After install
 
-Follow the one-time setup the installer prints — create the venv, then pair the
-device (`scripts/trezor_signer.py pair`), which writes a gitignored
-`trezor_credential.json`. Details and the signing commands are in [`SKILL.md`](SKILL.md).
+**The device must be paired once before first use** — signing returns
+`{"error":"not_paired"}` until then. Check with `scripts/trezor_signer.py status`.
+Follow the setup the installer prints: create the venv, then pair
+(`scripts/trezor_signer.py pair`). Pairing saves a credential to your user config
+directory (`%APPDATA%\trezor-skill\`, `~/Library/Application Support/trezor-skill/`,
+or `~/.config/trezor-skill/`) — not the repo. Signing commands and details are in
+[`SKILL.md`](SKILL.md).

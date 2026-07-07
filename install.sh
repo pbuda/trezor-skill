@@ -60,16 +60,23 @@ fi
 ln -s "$SRC_DIR" "$link"
 echo "==> Linked skill '$skill_name': $link -> $SRC_DIR"
 
-# --- Point the user at the one-time setup -------------------------------------
+# --- Warn: the device must be paired before first use -------------------------
 echo
-echo "Skill installed. One-time device setup, from the skill directory:"
-echo "    cd \"$link\""
+echo "Skill installed and linked."
+echo
+echo "!!  Before first use, the Trezor must be PAIRED once. Until then, every signing"
+echo "    command reports {\"error\":\"not_paired\"}. Check anytime with:"
+echo "        scripts/trezor_signer.py status"
+echo
+echo "    To pair (installs deps, then runs the one-time pairing), from $link:"
 if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
-  echo "    # WSL detected — device I/O runs on Windows Python:"
-  echo "    python.exe -m pip install --user -r scripts/requirements-windows.txt"
-  echo "    python -m venv .venv && .venv/bin/pip install -r scripts/requirements-wsl.txt"
-  echo "    python.exe scripts/trezor_signer.py pair"
+  echo "        # WSL — device I/O runs on Windows Python:"
+  echo "        python.exe -m pip install --user -r scripts/requirements-windows.txt"
+  echo "        python -m venv .venv && .venv/bin/pip install -r scripts/requirements-wsl.txt"
+  echo "        python.exe scripts/trezor_signer.py pair"
 else
-  echo "    python -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt"
-  echo "    .venv/bin/python scripts/trezor_signer.py pair"
+  echo "        python -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt"
+  echo "        .venv/bin/python scripts/trezor_signer.py pair"
 fi
+echo
+echo "    The pairing credential is saved in your user config dir, not the skill folder."
